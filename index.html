@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediScan AI - Medical Grade Analysis</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container { max-width: 1000px; margin: 0 auto; }
+        
+        .header { 
+            text-align: center;
+            color: #fff;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 { 
+            font-size: 2.8em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            margin: 5px;
+        }
+        
+        .card { 
+            background: #fff;
+            border-radius: 20px;
+            padding: 35px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+        
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            background: #f8f9ff;
+            transition: all 0.3s;
+        }
+        
+        .upload-area:hover { background: #f0f2ff; border-color: #764ba2; }
+        
+        input[type="file"] { display: none; }
+        
+        .upload-btn {
+            display: inline-block;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        
+        .upload-btn:hover { transform: translateY(-2px); }
+        
+        .analyze-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        
+        .loading { 
+            text-align: center;
+            padding: 30px;
+            display: none;
+        }
+        
+        .spinner { 
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .results { margin-top: 20px; }
+        
+        .section {
+            background: #fff;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .section-title {
+            font-size: 1.5em;
+            color: #667eea;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .confidence-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+        
+        .confidence-high { background: #d4edda; color: #155724; }
+        .confidence-medium { background: #fff3cd; color: #856404; }
+        .confidence-low { background: #f8d7da; color: #721c24; }
+        
+        .extracted-text {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+        
+        .medicine-card {
+            background: linear-gradient(135deg, #f8f9ff, #fff);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .medicine-header {
+            font-size: 1.3em;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .medicine-detail {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 10px;
+            margin: 8px 0;
+            font-size: 0.95em;
+        }
+        
+        .medicine-detail strong {
+            color: #555;
+        }
+        
+        .frequency-tag {
+            display: inline-block;
+            background: #e8eaf6;
+            color: #5c6bc0;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-weight: 600;
+            font-size: 0.85em;
+        }
+        
+        .clarity-indicator {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        
+        .clarity-clear { background: #d4edda; color: #155724; }
+        .clarity-partial { background: #fff3cd; color: #856404; }
+        .clarity-unclear { background: #f8d7da; color: #721c24; }
+        
+        .alternatives-section {
+            margin-top: 30px;
+        }
+        
+        .alternative-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 2px solid #e8eaf6;
+        }
+        
+        .alt-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+        
+        .alt-medicine {
+            background: #f8f9ff;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .alt-medicine-name {
+            font-size: 1.2em;
+            color: #667eea;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        .info-box {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 3px solid #667eea;
+        }
+        
+        .info-box h4 {
+            color: #667eea;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .info-box ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .info-box li {
+            padding: 5px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .info-box li:before {
+            content: "•";
+            position: absolute;
+            left: 5px;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .advantages { border-left-color: #28a745; }
+        .advantages h4 { color: #28a745; }
+        .advantages li:before { color: #28a745; }
+        
+        .side-effects { border-left-color: #ffc107; }
+        .side-effects h4 { color: #ffc107; }
+        .side-effects li:before { color: #ffc107; }
+        
+        .contraindications { border-left-color: #dc3545; }
+        .contraindications h4 { color: #dc3545; }
+        .contraindications li:before { color: #dc3545; }
+        
+        .warning-banner {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            border: 2px solid #ffc107;
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .warning-banner .icon {
+            font-size: 2em;
+        }
+        
+        .safety-banner {
+            background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+            border: 2px solid #dc3545;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            font-weight: 600;
+            color: #721c24;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .unclear-section {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #ffc107;
+        }
+        
+        @media (max-width: 768px) {
+            .info-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 MediScan AI</h1>
+            <p style="font-size: 1.2em;">Medical-Grade Prescription Analysis</p>
+            <div>
+                <span class="badge">🔍 Accurate OCR</span>
+                <span class="badge">🧠 AI-Powered</span>
+                <span class="badge">⚕️ Clinical Safety</span>
+            </div>
+        </div>
+        
+        <div class="card">
+            <form id="uploadForm">
+                <div class="upload-area" id="uploadArea">
+                    <div style="font-size: 3em; margin-bottom: 15px;">📄</div>
+                    <h3 style="margin-bottom: 10px;">Upload Prescription</h3>
+                    <p style="color: #666; margin-bottom: 20px;">Click to select or drag and drop</p>
+                    <label class="upload-btn" for="fileInput">
+                        Choose File
+                    </label>
+                    <input type="file" id="fileInput" name="file" accept="image/*" required>
+                    <p id="fileName" style="margin-top: 15px; color: #667eea; font-weight: 600;"></p>
+                </div>
+                <button type="submit" class="analyze-btn">🔍 Analyze Prescription</button>
+            </form>
+            
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p style="color: #667eea; font-weight: 600;">🧠 Analyzing prescription with medical AI...</p>
+            </div>
+        </div>
+        
+        <div id="results" class="results"></div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const fileName = document.getElementById('fileName');
+        const uploadArea = document.getElementById('uploadArea');
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                fileName.textContent = `Selected: ${e.target.files[0].name}`;
+            }
+        });
+        
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#764ba2';
+            uploadArea.style.background = '#f0f2ff';
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '#667eea';
+            uploadArea.style.background = '#f8f9ff';
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#667eea';
+            uploadArea.style.background = '#f8f9ff';
+            
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                fileName.textContent = `Selected: ${e.dataTransfer.files[0].name}`;
+            }
+        });
+        
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('results');
+            
+            loading.style.display = 'block';
+            results.innerHTML = '';
+            
+            try {
+                const formData = new FormData(e.target);
+                const response = await fetch('/process', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    results.innerHTML = `<div class="section"><div class="error">❌ ${data.error}</div></div>`;
+                } else {
+                    displayResults(data);
+                }
+            } catch (error) {
+                results.innerHTML = `<div class="section"><div class="error">❌ Error: ${error.message}</div></div>`;
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+        
+        function displayResults(data) {
+            const results = document.getElementById('results');
+            let html = '';
+            
+            // Confidence badge
+            const confClass = data.confidence === 'high' ? 'confidence-high' : 
+                             data.confidence === 'medium' ? 'confidence-medium' : 'confidence-low';
+            
+            // Extracted text section
+            html += `
+                <div class="section">
+                    <div class="section-title">
+                        📄 Extracted Prescription Text
+                        <span class="confidence-badge ${confClass}">${data.confidence} confidence</span>
+                    </div>
+                    <div class="extracted-text">${data.extracted_text || 'No text extracted'}</div>
+                    ${data.reasoning ? `<p style="margin-top: 15px; color: #666;"><strong>Analysis:</strong> ${data.reasoning}</p>` : ''}
+                </div>
+            `;
+            
+            // Unclear sections warning
+            if (data.unclear_sections && data.unclear_sections.length > 0) {
+                html += `
+                    <div class="section">
+                        <div class="unclear-section">
+                            <strong>⚠️ Unclear Text Detected:</strong>
+                            <ul style="margin-top: 10px; padding-left: 20px;">
+                                ${data.unclear_sections.map(s => `<li>${s}</li>`).join('')}
+                            </ul>
+                            <p style="margin-top: 10px; font-size: 0.9em;">Please verify these sections with the original prescription.</p>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Prescribed medicines
+            if (data.medicines_in_prescription && data.medicines_in_prescription.length > 0) {
+                html += `
+                    <div class="section">
+                        <div class="section-title">💊 Prescribed Medicines (${data.medicines_in_prescription.length})</div>
+                `;
+                
+                data.medicines_in_prescription.forEach((med, i) => {
+                    const clarityClass = med.clarity === 'clear' ? 'clarity-clear' : 
+                                       med.clarity === 'partial' ? 'clarity-partial' : 'clarity-unclear';
+                    
+                    html += `
+                        <div class="medicine-card">
+                            <div class="medicine-header">
+                                ${i + 1}. ${med.name}
+                                <span class="clarity-indicator ${clarityClass}">${med.clarity || 'unknown'}</span>
+                            </div>
+                            <div class="medicine-detail">
+                                <strong>Strength:</strong>
+                                <span>${med.strength || 'Not specified'}</span>
+                            </div>
+                            <div class="medicine-detail">
+                                <strong>Frequency:</strong>
+                                <span class="frequency-tag">${med.frequency || 'Not specified'}</span>
+                            </div>
+                            ${med.duration ? `
+                                <div class="medicine-detail">
+                                    <strong>Duration:</strong>
+                                    <span>${med.duration}</span>
+                                </div>
+                            ` : ''}
+                            ${med.instructions ? `
+                                <div class="medicine-detail">
+                                    <strong>Instructions:</strong>
+                                    <span>${med.instructions}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                });
+                
+                html += `</div>`;
+            }
+            
+            // Detailed alternatives
+            if (data.detailed_alternatives && data.detailed_alternatives.length > 0) {
+                html += `<div class="alternatives-section">`;
+                
+                data.detailed_alternatives.forEach((alt, idx) => {
+                    const info = alt.alternatives_info;
+                    
+                    html += `
+                        <div class="section">
+                            <div class="alt-header">
+                                📋 Alternatives & Information for: ${alt.original_medicine.name}
+                            </div>
+                            
+                            <div style="background: #f8f9ff; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                                <strong>Generic:</strong> ${info.generic}<br>
+                                <strong>Drug Class:</strong> ${info.class}
+                            </div>
+                    `;
+                    
+                    // Same medicine alternatives (different brands)
+                    if (info.alternatives && info.alternatives.length > 0) {
+                        html += `<h3 style="color: #667eea; margin: 20px 0 15px;">✅ Same Medicine (Different Brands)</h3>`;
+                        
+                        info.alternatives.forEach(altMed => {
+                            html += `
+                                <div class="alt-medicine">
+                                    <div class="alt-medicine-name">${altMed.name}</div>
+                                    <p style="margin-bottom: 15px;"><strong>Generic:</strong> ${altMed.generic}</p>
+                                    <p style="margin-bottom: 15px;"><strong>Uses:</strong> ${altMed.uses}</p>
+                                    
+                                    <div class="info-grid">
+                                        <div class="info-box advantages">
+                                            <h4>✅ Advantages</h4>
+                                            <ul>
+                                                ${altMed.advantages.map(a => `<li>${a}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                        
+                                        <div class="info-box side-effects">
+                                            <h4>⚠️ Side Effects</h4>
+                                            <ul>
+                                                ${altMed.side_effects.map(s => `<li>${s}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                        
+                                        <div class="info-box contraindications">
+                                            <h4>🚫 Contraindications</h4>
+                                            <ul>
+                                                ${altMed.contraindications.map(c => `<li>${c}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    
+                                    ${altMed.warning ? `
+                                        <div class="warning-banner">
+                                            <span class="icon">⚠️</span>
+                                            <span>${altMed.warning}</span>
+                                        </div>
+                                    ` : ''}
+                                    
+                                    <p style="margin-top: 15px; padding: 12px; background: #e8f5e9; border-radius: 8px;">
+                                        <strong>📝 Dosage Note:</strong> ${altMed.dosage_note}
+                                    </p>
+                                </div>
+                            `;
+                        });
+                    }
+                    
+                    // Related class medicines
+                    if (info.related_class && info.related_class.length > 0) {
+                        html += `
+                            <h3 style="color: #dc3545; margin: 30px 0 15px;">⚠️ Related Class Medicines (NOT Direct Substitutes)</h3>
+                            <div class="safety-banner">
+                                🚨 These are from related drug classes. They are NOT direct substitutes. 
+                                Switching requires doctor consultation, culture sensitivity testing, and proper evaluation.
+                            </div>
+                        `;
+                        
+                        info.related_class.forEach(relMed => {
+                            html += `
+                                <div class="alt-medicine" style="border-left-color: #ffc107;">
+                                    <div class="alt-medicine-name">${relMed.name}</div>
+                                    <p style="margin-bottom: 10px;"><strong>Generic:</strong> ${relMed.generic}</p>
+                                    <p style="margin-bottom: 15px;"><strong>Class:</strong> ${relMed.class}</p>
+                                    <p style="margin-bottom: 15px;"><strong>Uses:</strong> ${relMed.uses}</p>
+                                    
+                                    <div class="info-grid">
+                                        <div class="info-box advantages">
+                                            <h4>✅ Advantages</h4>
+                                            <ul>
+                                                ${relMed.advantages.map(a => `<li>${a}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                        
+                                        <div class="info-box side-effects">
+                                            <h4>⚠️ Side Effects</h4>
+                                            <ul>
+                                                ${relMed.side_effects.map(s => `<li>${s}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                        
+                                        <div class="info-box contraindications">
+                                            <h4>🚫 Contraindications</h4>
+                                            <ul>
+                                                ${relMed.contraindications.map(c => `<li>${c}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="warning-banner" style="background: linear-gradient(135deg, #f8d7da, #f5c6cb); border-color: #dc3545;">
+                                        <span class="icon">🚨</span>
+                                        <span><strong>${relMed.warning}</strong></span>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    }
+                    
+                    // Safety note
+                    if (info.safety_note) {
+                        html += `
+                            <div class="safety-banner">
+                                ${info.safety_note}
+                            </div>
+                        `;
+                    }
+                    
+                    html += `</div>`;
+                });
+                
+                html += `</div>`;
+            }
+            
+            // Final medical disclaimer
+            html += `
+                <div class="section">
+                    <div class="safety-banner">
+                        <strong>⚕️ MEDICAL DISCLAIMER:</strong><br><br>
+                        This is an informational tool only. It does NOT provide medical advice.<br><br>
+                        • Always consult a licensed healthcare provider before taking, changing, or stopping any medication<br>
+                        • Never self-substitute antibiotics or prescription medications<br>
+                        • Follow your doctor's prescription exactly as written<br>
+                        • Report any side effects or concerns to your healthcare provider immediately
+                    </div>
+                </div>
+            `;
+            
+            results.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

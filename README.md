@@ -1,9 +1,5 @@
 # Prescription-reader
-Perfect. Below is a **clean, professional README** you can **copy-paste directly** for your project that uses **TrOCR (local OCR)** + **Groq API (AI analysis)**.
 
-No emojis, no fluff, college / GitHub / resume ready.
-
----
 
 # MediScan AI
 
